@@ -1,9 +1,7 @@
 """Tests for config loading — defaults, file overrides, env overrides."""
 
 import json
-import os
 
-import pytest
 
 from scout.config import ScoutConfig, load_config
 

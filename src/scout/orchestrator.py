@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from scout.models import ImageHit, NewsHit, SearchHit
+from scout.models import SearchHit
 
 log = logging.getLogger(__name__)
 

@@ -1,8 +1,7 @@
 """Tests for YouTube extraction — transcript fetching and VTT cleaning."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from scout.media.youtube import _clean_vtt, _get_transcript
 

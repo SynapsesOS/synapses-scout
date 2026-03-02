@@ -1,6 +1,6 @@
 """Tests for the web extractor (fast path + browser fallback)."""
 
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -94,7 +94,7 @@ class TestExtractFallback:
             extracted_at=datetime.now(timezone.utc),
         )
 
-        with patch("scout.extractor.web._fast_extract", new_callable=AsyncMock, return_value=fast_result) as mock_fast, \
+        with patch("scout.extractor.web._fast_extract", new_callable=AsyncMock, return_value=fast_result), \
              patch("scout.extractor.web._browser_extract", new_callable=AsyncMock) as mock_browser:
             result = await extract("https://blog.com", config)
 

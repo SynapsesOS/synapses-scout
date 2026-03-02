@@ -36,11 +36,17 @@ CREATE TABLE IF NOT EXISTS search_cache (
     query       TEXT NOT NULL,
     provider    TEXT NOT NULL,
     results     TEXT NOT NULL,
+    metadata    TEXT NOT NULL DEFAULT '{}',
     fetched_at  TEXT NOT NULL,
     expires_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_search_expires ON search_cache(expires_at);
 """
+
+_MIGRATIONS = [
+    # Add metadata column to search_cache if it doesn't exist (added in v0.0.2).
+    "ALTER TABLE search_cache ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'",
+]
 
 
 def normalize_url(url: str) -> str:
@@ -76,6 +82,13 @@ class Cache:
         db.row_factory = aiosqlite.Row
         await db.executescript(_SCHEMA)
         await db.commit()
+        # Apply migrations (idempotent — ignore errors for already-applied ones).
+        for sql in _MIGRATIONS:
+            try:
+                await db.execute(sql)
+                await db.commit()
+            except Exception:
+                pass
         instance = cls(db)
         await instance.prune()
         return instance
@@ -149,24 +162,39 @@ class Cache:
             row = await cursor.fetchone()
         if not row:
             return None
+        extra = json.loads(row["metadata"]) if row["metadata"] else {}
         return {
             "query": row["query"],
             "provider": row["provider"],
             "results": json.loads(row["results"]),
             "fetched_at": row["fetched_at"],
+            **extra,
         }
 
-    async def put_search(self, query: str, provider: str, results: list[dict], ttl_hours: int) -> None:
-        """Cache search results."""
+    async def put_search(
+        self,
+        query: str,
+        provider: str,
+        results: list[dict],
+        ttl_hours: int,
+        extra: dict | None = None,
+    ) -> None:
+        """Cache search results. extra holds orchestration metadata (queries_used, etc.)."""
         h = query_hash(query)
         now = datetime.now(timezone.utc)
         expires = now + timedelta(hours=ttl_hours)
 
         await self._db.execute(
             """INSERT OR REPLACE INTO search_cache
-               (query_hash, query, provider, results, fetched_at, expires_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (h, query, provider, json.dumps(results), now.isoformat(), expires.isoformat()),
+               (query_hash, query, provider, results, metadata, fetched_at, expires_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (
+                h, query, provider,
+                json.dumps(results),
+                json.dumps(extra or {}),
+                now.isoformat(),
+                expires.isoformat(),
+            ),
         )
         await self._db.commit()
 

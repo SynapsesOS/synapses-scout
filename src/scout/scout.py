@@ -26,10 +26,12 @@ from scout.searcher.duckduckgo import DuckDuckGoSearcher
 log = logging.getLogger(__name__)
 
 
-def _make_searcher(config: ScoutConfig) -> DuckDuckGoSearcher:
+def _make_searcher(config: ScoutConfig) -> SearchProvider:
     if config.search_provider == "tavily" and config.tavily_api_key:
-        # Tavily doesn't support news/images, so we still return DDG for those
-        pass
+        from scout.searcher.tavily import TavilySearcher
+
+        log.info("scout: using Tavily search provider")
+        return TavilySearcher(config.tavily_api_key)
     return DuckDuckGoSearcher()
 
 
@@ -49,7 +51,7 @@ class Scout:
         self,
         config: ScoutConfig,
         cache: Cache,
-        searcher: DuckDuckGoSearcher,
+        searcher: SearchProvider,
         intelligence: IntelligenceClient,
     ):
         self.config = config
@@ -73,6 +75,7 @@ class Scout:
         distill: bool | None = None,
         region: str | None = None,
         timelimit: str | None = None,
+        max_results: int = 10,
     ) -> ScoutResult:
         """Main entry point. Accepts a URL or a search query.
 
@@ -82,6 +85,7 @@ class Scout:
             distill: Override config.distill for this request.
             region: Override search region (e.g., "us-en", "fr-fr").
             timelimit: Time filter — "d" (day), "w" (week), "m" (month), "y" (year).
+            max_results: Max results for search queries (default 10).
         """
         content_type = classify(input_str)
         should_distill = distill if distill is not None else self.config.distill
@@ -89,7 +93,7 @@ class Scout:
         if content_type == ContentType.SEARCH:
             return await self._handle_search(
                 input_str, force_refresh, should_distill,
-                region=region, timelimit=timelimit,
+                region=region, timelimit=timelimit, max_results=max_results,
             )
 
         url = ensure_url(input_str)
@@ -186,9 +190,18 @@ class Scout:
             safesearch=self.config.search_safesearch,
         )
 
-    async def extract(self, url: str) -> ScoutResult:
-        """Direct web extraction, bypassing routing."""
-        return await self._handle_web(ensure_url(url), self.config.distill)
+    async def extract(self, url: str, *, force_refresh: bool = False) -> ScoutResult:
+        """Direct web extraction with caching."""
+        url = ensure_url(url)
+
+        if not force_refresh:
+            cached = await self.cache.get(url)
+            if cached is not None:
+                return cached
+
+        result = await self._handle_web(url, self.config.distill)
+        await self.cache.put(result, self.config.default_ttl_web_hours)
+        return result
 
     async def close(self) -> None:
         await self.intelligence.close()
@@ -204,6 +217,7 @@ class Scout:
         *,
         region: str | None = None,
         timelimit: str | None = None,
+        max_results: int = 10,
     ) -> ScoutResult:
         if not force_refresh:
             cached = await self.cache.get_search(query)
@@ -216,7 +230,13 @@ class Scout:
                     title=f'Search: "{query}"',
                     content_md=content_md,
                     word_count=len(content_md.split()),
-                    metadata={"provider": cached["provider"], "hit_count": len(hits)},
+                    metadata={
+                        "provider": cached["provider"],
+                        "hit_count": len(hits),
+                        "queries_used": cached.get("queries_used", 1),
+                        "total_raw_hits": cached.get("total_raw_hits", len(hits)),
+                        "deduplicated": cached.get("deduplicated", 0),
+                    },
                     cached=True,
                     fetched_at=datetime.fromisoformat(cached["fetched_at"]),
                 )
@@ -225,7 +245,7 @@ class Scout:
         orch = await orchestrated_search(
             self.searcher,
             query,
-            max_results=10,
+            max_results=max_results,
             expand=self.config.search_expand,
             region=region or self.config.search_region,
             timelimit=timelimit,
@@ -234,14 +254,6 @@ class Scout:
         hits = orch.hits
         content_md = self._format_search_hits(query, hits)
 
-        # Cache search results
-        await self.cache.put_search(
-            query,
-            self.config.search_provider,
-            [h.model_dump() for h in hits],
-            self.config.default_ttl_search_hours,
-        )
-
         metadata = {
             "provider": self.config.search_provider,
             "hit_count": len(hits),
@@ -249,6 +261,19 @@ class Scout:
             "total_raw_hits": orch.total_raw_hits,
             "deduplicated": orch.deduplicated_count,
         }
+
+        # Cache search results (include orchestration metadata for cache reconstruction)
+        await self.cache.put_search(
+            query,
+            self.config.search_provider,
+            [h.model_dump() for h in hits],
+            self.config.default_ttl_search_hours,
+            extra={
+                "queries_used": len(orch.expanded_queries),
+                "total_raw_hits": orch.total_raw_hits,
+                "deduplicated": orch.deduplicated_count,
+            },
+        )
 
         result = ScoutResult(
             url=f"search://{query}",
@@ -329,8 +354,7 @@ class Scout:
         self, content: str, title: str, url: str, content_type: str
     ) -> ScoutFragment | None:
         try:
-            if await self.intelligence.available():
-                return await self.intelligence.distill(content, title, url, content_type)
+            return await self.intelligence.distill(content, title, url, content_type)
         except Exception as e:
             log.debug("distillation skipped: %s", e)
         return None

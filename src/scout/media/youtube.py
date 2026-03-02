@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+import urllib.request
 from datetime import datetime, timezone
 from functools import partial
 
@@ -23,8 +24,8 @@ def _extract_sync(url: str) -> MediaContent:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        "writesubtitles": True,
-        "writeautomaticsub": True,
+        "writesubtitles": False,   # we fetch subtitle URLs manually below
+        "writeautomaticsub": False,
         "subtitleslangs": ["en"],
         "subtitlesformat": "vtt",
     }
@@ -51,38 +52,71 @@ def _extract_sync(url: str) -> MediaContent:
     )
 
 
+def _fetch_subtitle_url(url: str) -> str | None:
+    """Fetch a subtitle file from a URL. Returns raw text or None on failure."""
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; SynapsesScout/0.0.1)"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read().decode("utf-8", errors="replace")
+    except Exception:
+        return None
+
+
 def _get_transcript(info: dict) -> str | None:
-    """Try to extract English subtitles/auto-captions from yt-dlp info."""
-    # Check for requested subtitles (auto or manual)
+    """Extract English transcript from yt-dlp info dict.
+
+    yt-dlp populates subtitle URLs in the info dict even with download=False,
+    but the 'data' key is only filled when actually writing to disk.
+    We fetch the subtitle URL directly to get the content.
+    """
+    # 1. Check requested_subtitles (populated by yt-dlp even without downloading)
     requested = info.get("requested_subtitles") or {}
     for lang_key in ["en", "en-US", "en-GB"]:
         if sub := requested.get(lang_key):
             if data := sub.get("data"):
                 return _clean_vtt(data)
+            if sub_url := sub.get("url"):
+                if text := _fetch_subtitle_url(sub_url):
+                    return _clean_vtt(text)
 
-    # Fallback: check subtitles dict
+    # 2. Fallback: scan subtitles then automatic_captions dicts for a VTT URL
     for sub_dict in [info.get("subtitles", {}), info.get("automatic_captions", {})]:
         for lang_key in ["en", "en-US", "en-GB"]:
-            if entries := sub_dict.get(lang_key):
-                for entry in entries:
-                    if data := entry.get("data"):
-                        return _clean_vtt(data)
+            entries = sub_dict.get(lang_key) or []
+            # Prefer VTT format, fall back to any format
+            vtt_entries = [e for e in entries if e.get("ext") == "vtt"]
+            for entry in vtt_entries or entries:
+                if data := entry.get("data"):
+                    return _clean_vtt(data)
+                if sub_url := entry.get("url"):
+                    if text := _fetch_subtitle_url(sub_url):
+                        return _clean_vtt(text)
 
     return None
 
 
 def _clean_vtt(vtt_text: str) -> str:
-    """Strip VTT timestamps and formatting, return plain text."""
+    """Strip VTT timestamps and formatting, return plain text.
+
+    YouTube auto-captions use a sliding-window approach where each cue
+    partially overlaps the previous. We use prev-line comparison instead of
+    a global seen-set to avoid incorrectly deduplicating valid repeated phrases
+    (e.g. "Thank you" appearing multiple times in a transcript).
+    """
     lines: list[str] = []
-    seen: set[str] = set()
+    prev = ""
     for line in vtt_text.splitlines():
         line = line.strip()
-        # Skip headers, timestamps, and blank lines
+        # Skip VTT headers, timestamp lines, cue index numbers, and blank lines
         if not line or line.startswith("WEBVTT") or "-->" in line or line.isdigit():
             continue
-        # Strip HTML tags
+        # Strip inline tags like <00:00:01.000><c> and HTML tags
         clean = re.sub(r"<[^>]+>", "", line).strip()
-        if clean and clean not in seen:
-            seen.add(clean)
-            lines.append(clean)
+        if not clean or clean == prev:
+            continue
+        lines.append(clean)
+        prev = clean
     return " ".join(lines)

@@ -104,7 +104,7 @@ class ScoutResult(BaseModel):
 
         if self.metadata:
             for key, value in self.metadata.items():
-                lines.append(f"{key}: {json.dumps(value) if isinstance(value, str) else value}")
+                lines.append(f"{key}: {json.dumps(value, default=str)}")
 
         lines.append("---")
         lines.append("")

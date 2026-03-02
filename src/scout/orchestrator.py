@@ -16,6 +16,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from scout.models import ImageHit, NewsHit, SearchHit
 
@@ -66,7 +67,7 @@ def expand_query(query: str) -> list[str]:
 
     # Add recency if no year in query
     if not re.search(r"\b20\d{2}\b", clean):
-        queries.append(f"{clean} latest 2026")
+        queries.append(f"{clean} latest {datetime.now().year}")
 
     return queries
 

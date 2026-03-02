@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 from functools import partial
 
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 from scout.models import ImageHit, NewsHit, SearchHit
 

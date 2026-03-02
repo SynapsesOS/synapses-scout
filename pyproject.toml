@@ -15,7 +15,7 @@ dependencies = [
     "uvicorn>=0.30",
     "crawl4ai>=0.4",
     "yt-dlp>=2024.0",
-    "duckduckgo-search>=6.0",
+    "ddgs>=9.0",
     "trafilatura>=2.0",
     "lxml_html_clean>=0.4",
 ]

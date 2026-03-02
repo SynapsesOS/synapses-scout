@@ -108,7 +108,9 @@ class TestCacheOps:
 
     @pytest.mark.asyncio
     async def test_search_cache(self, cache):
-        await cache.put_search("test query", "duckduckgo", [{"title": "T", "url": "u", "snippet": "s"}], 6)
+        await cache.put_search(
+            "test query", "duckduckgo", [{"title": "T", "url": "u", "snippet": "s"}], 6
+        )
         got = await cache.get_search("test query")
         assert got is not None
         assert got["provider"] == "duckduckgo"

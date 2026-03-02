@@ -44,7 +44,11 @@ class TestDeduplicateAndScore:
                 SearchHit(title="B", url="https://other.com", snippet="second"),
             ],
             "query 2": [
-                SearchHit(title="A alt", url="https://example.com/page/", snippet="longer first snippet here"),
+                SearchHit(
+                    title="A alt",
+                    url="https://example.com/page/",
+                    snippet="longer first snippet here",
+                ),
                 SearchHit(title="C", url="https://third.com", snippet="third"),
             ],
         }
@@ -76,7 +80,13 @@ class TestDeduplicateAndScore:
     def test_keeps_longer_snippet(self):
         results = {
             "q1": [SearchHit(title="A", url="https://a.com", snippet="short")],
-            "q2": [SearchHit(title="A", url="https://a.com", snippet="this is a much longer snippet with more detail")],
+            "q2": [
+                SearchHit(
+                    title="A",
+                    url="https://a.com",
+                    snippet="this is a much longer snippet with more detail",
+                )
+            ],
         }
         ranked = deduplicate_and_score(results)
         assert "much longer" in ranked[0].snippet
@@ -86,13 +96,13 @@ class TestOrchestratedSearch:
     @pytest.mark.asyncio
     async def test_parallel_fanout(self):
         mock_searcher = AsyncMock()
-        mock_searcher.search = AsyncMock(return_value=[
-            SearchHit(title="R", url="https://r.com", snippet="result"),
-        ])
-
-        orch = await orchestrated_search(
-            mock_searcher, "test query", max_results=5, expand=True
+        mock_searcher.search = AsyncMock(
+            return_value=[
+                SearchHit(title="R", url="https://r.com", snippet="result"),
+            ]
         )
+
+        orch = await orchestrated_search(mock_searcher, "test query", max_results=5, expand=True)
 
         assert orch.original_query == "test query"
         assert len(orch.expanded_queries) > 1
@@ -102,13 +112,13 @@ class TestOrchestratedSearch:
     @pytest.mark.asyncio
     async def test_no_expand(self):
         mock_searcher = AsyncMock()
-        mock_searcher.search = AsyncMock(return_value=[
-            SearchHit(title="R", url="https://r.com", snippet="result"),
-        ])
-
-        orch = await orchestrated_search(
-            mock_searcher, "single", max_results=5, expand=False
+        mock_searcher.search = AsyncMock(
+            return_value=[
+                SearchHit(title="R", url="https://r.com", snippet="result"),
+            ]
         )
+
+        orch = await orchestrated_search(mock_searcher, "single", max_results=5, expand=False)
 
         assert orch.expanded_queries == ["single"]
         mock_searcher.search.assert_called_once()
@@ -127,9 +137,7 @@ class TestOrchestratedSearch:
         mock_searcher = AsyncMock()
         mock_searcher.search = flaky_search
 
-        orch = await orchestrated_search(
-            mock_searcher, "test", max_results=5, expand=True
-        )
+        orch = await orchestrated_search(mock_searcher, "test", max_results=5, expand=True)
 
         # Should still return results from successful queries
         assert len(orch.hits) > 0

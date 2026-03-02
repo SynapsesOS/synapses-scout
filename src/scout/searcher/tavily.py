@@ -32,9 +32,7 @@ class TavilySearcher:
     ) -> list[SearchHit]:
         # Tavily ignores region/timelimit/safesearch — those are DDG-specific params.
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None, partial(self._search_sync, query, max_results)
-        )
+        return await loop.run_in_executor(None, partial(self._search_sync, query, max_results))
 
     def _search_sync(self, query: str, max_results: int) -> list[SearchHit]:
         try:

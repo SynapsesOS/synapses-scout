@@ -73,8 +73,14 @@ class TestExtractFallback:
             extracted_at=datetime.now(timezone.utc),
         )
 
-        with patch("scout.extractor.web._fast_extract", new_callable=AsyncMock, return_value=None), \
-             patch("scout.extractor.web._browser_extract", new_callable=AsyncMock, return_value=mock_browser_result):
+        with (
+            patch("scout.extractor.web._fast_extract", new_callable=AsyncMock, return_value=None),
+            patch(
+                "scout.extractor.web._browser_extract",
+                new_callable=AsyncMock,
+                return_value=mock_browser_result,
+            ),
+        ):
             result = await extract("https://spa.com", config)
 
         assert result.title == "SPA Page"
@@ -94,8 +100,14 @@ class TestExtractFallback:
             extracted_at=datetime.now(timezone.utc),
         )
 
-        with patch("scout.extractor.web._fast_extract", new_callable=AsyncMock, return_value=fast_result), \
-             patch("scout.extractor.web._browser_extract", new_callable=AsyncMock) as mock_browser:
+        with (
+            patch(
+                "scout.extractor.web._fast_extract",
+                new_callable=AsyncMock,
+                return_value=fast_result,
+            ),
+            patch("scout.extractor.web._browser_extract", new_callable=AsyncMock) as mock_browser,
+        ):
             result = await extract("https://blog.com", config)
 
         assert result.title == "Blog Post"

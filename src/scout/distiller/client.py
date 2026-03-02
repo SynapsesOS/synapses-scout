@@ -48,10 +48,7 @@ class IntelligenceClient:
     async def available(self) -> bool:
         """Return whether intelligence + Ollama are reachable. Result is cached for 30s."""
         now = time.monotonic()
-        if (
-            self._available is not None
-            and (now - self._available_checked_at) < _AVAILABILITY_TTL
-        ):
+        if self._available is not None and (now - self._available_checked_at) < _AVAILABILITY_TTL:
             return self._available
 
         try:

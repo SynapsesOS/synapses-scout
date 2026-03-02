@@ -43,8 +43,12 @@ class DuckDuckGoSearcher:
         return await loop.run_in_executor(
             None,
             partial(
-                self._text_sync, query, max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
+                self._text_sync,
+                query,
+                max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
             ),
         )
 
@@ -66,8 +70,12 @@ class DuckDuckGoSearcher:
         return await loop.run_in_executor(
             None,
             partial(
-                self._news_sync, query, max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
+                self._news_sync,
+                query,
+                max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
             ),
         )
 
@@ -98,70 +106,112 @@ class DuckDuckGoSearcher:
         return await loop.run_in_executor(
             None,
             partial(
-                self._images_sync, query, max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
-                size=size, color=color, type_image=type_image, layout=layout,
+                self._images_sync,
+                query,
+                max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
+                size=size,
+                color=color,
+                type_image=type_image,
+                layout=layout,
             ),
         )
 
     # --- Sync implementations (run in thread pool) ---
 
     def _text_sync(
-        self, query: str, max_results: int, *,
-        region: str, timelimit: str | None, safesearch: str,
+        self,
+        query: str,
+        max_results: int,
+        *,
+        region: str,
+        timelimit: str | None,
+        safesearch: str,
     ) -> list[SearchHit]:
         hits: list[SearchHit] = []
         with self._make_client() as ddgs:
             for r in ddgs.text(
-                query, max_results=max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
+                query,
+                max_results=max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
             ):
-                hits.append(SearchHit(
-                    title=r.get("title", ""),
-                    url=r.get("href", ""),
-                    snippet=r.get("body", ""),
-                ))
+                hits.append(
+                    SearchHit(
+                        title=r.get("title", ""),
+                        url=r.get("href", ""),
+                        snippet=r.get("body", ""),
+                    )
+                )
         return hits
 
     def _news_sync(
-        self, query: str, max_results: int, *,
-        region: str, timelimit: str | None, safesearch: str,
+        self,
+        query: str,
+        max_results: int,
+        *,
+        region: str,
+        timelimit: str | None,
+        safesearch: str,
     ) -> list[NewsHit]:
         hits: list[NewsHit] = []
         with self._make_client() as ddgs:
             for r in ddgs.news(
-                query, max_results=max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
+                query,
+                max_results=max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
             ):
-                hits.append(NewsHit(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
-                    snippet=r.get("body", ""),
-                    source=r.get("source", ""),
-                    date=r.get("date", ""),
-                ))
+                hits.append(
+                    NewsHit(
+                        title=r.get("title", ""),
+                        url=r.get("url", ""),
+                        snippet=r.get("body", ""),
+                        source=r.get("source", ""),
+                        date=r.get("date", ""),
+                    )
+                )
         return hits
 
     def _images_sync(
-        self, query: str, max_results: int, *,
-        region: str, timelimit: str | None, safesearch: str,
-        size: str | None, color: str | None,
-        type_image: str | None, layout: str | None,
+        self,
+        query: str,
+        max_results: int,
+        *,
+        region: str,
+        timelimit: str | None,
+        safesearch: str,
+        size: str | None,
+        color: str | None,
+        type_image: str | None,
+        layout: str | None,
     ) -> list[ImageHit]:
         hits: list[ImageHit] = []
         with self._make_client() as ddgs:
             for r in ddgs.images(
-                query, max_results=max_results,
-                region=region, timelimit=timelimit, safesearch=safesearch,
-                size=size, color=color, type_image=type_image, layout=layout,
+                query,
+                max_results=max_results,
+                region=region,
+                timelimit=timelimit,
+                safesearch=safesearch,
+                size=size,
+                color=color,
+                type_image=type_image,
+                layout=layout,
             ):
-                hits.append(ImageHit(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
-                    image_url=r.get("image", ""),
-                    thumbnail_url=r.get("thumbnail", ""),
-                    width=r.get("width", 0) or 0,
-                    height=r.get("height", 0) or 0,
-                    source=r.get("source", ""),
-                ))
+                hits.append(
+                    ImageHit(
+                        title=r.get("title", ""),
+                        url=r.get("url", ""),
+                        image_url=r.get("image", ""),
+                        thumbnail_url=r.get("thumbnail", ""),
+                        width=r.get("width", 0) or 0,
+                        height=r.get("height", 0) or 0,
+                        source=r.get("source", ""),
+                    )
+                )
         return hits

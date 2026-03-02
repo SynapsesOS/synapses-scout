@@ -37,13 +37,15 @@ def mock_scout():
     scout.news = AsyncMock(return_value=[])
     scout.images = AsyncMock(return_value=[])
     scout.extract = AsyncMock(return_value=_make_result())
-    scout.deep_search = AsyncMock(return_value=MagicMock(
-        original_query="test",
-        expanded_queries=["test"],
-        hits=[],
-        total_raw_hits=0,
-        deduplicated_count=0,
-    ))
+    scout.deep_search = AsyncMock(
+        return_value=MagicMock(
+            original_query="test",
+            expanded_queries=["test"],
+            hits=[],
+            total_raw_hits=0,
+            deduplicated_count=0,
+        )
+    )
     return scout
 
 
@@ -83,7 +85,9 @@ class TestFetch:
 
     def test_fetch_invalid_json_returns_400(self, client):
         c, _ = client
-        resp = c.post("/v1/fetch", content=b"not json", headers={"content-type": "application/json"})
+        resp = c.post(
+            "/v1/fetch", content=b"not json", headers={"content-type": "application/json"}
+        )
         assert resp.status_code == 400
 
     def test_fetch_exception_returns_500_json(self, client):
@@ -104,9 +108,11 @@ class TestFetch:
 class TestSearch:
     def test_search_returns_hits(self, client):
         c, mock_scout = client
-        mock_scout.search = AsyncMock(return_value=[
-            SearchHit(title="Result", url="https://a.com", snippet="snippet"),
-        ])
+        mock_scout.search = AsyncMock(
+            return_value=[
+                SearchHit(title="Result", url="https://a.com", snippet="snippet"),
+            ]
+        )
         resp = c.post("/v1/search", json={"query": "python"})
         assert resp.status_code == 200
         data = resp.json()
@@ -189,9 +195,14 @@ class TestCache:
 
     def test_cache_delete_with_url_invalidates(self, client):
         import json as _json
+
         c, _ = client
         # Starlette TestClient wraps requests.Session; use request() for DELETE with body
-        resp = c.request("DELETE", "/v1/cache", data=_json.dumps({"url": "https://example.com"}),
-                         headers={"content-type": "application/json"})
+        resp = c.request(
+            "DELETE",
+            "/v1/cache",
+            data=_json.dumps({"url": "https://example.com"}),
+            headers={"content-type": "application/json"},
+        )
         assert resp.status_code == 200
         assert "invalidated" in resp.json()

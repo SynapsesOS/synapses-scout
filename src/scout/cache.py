@@ -13,8 +13,18 @@ import aiosqlite
 
 from scout.models import ContentType, ScoutFragment, ScoutResult
 
-_TRACKING_PARAMS = {"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-                     "ref", "fbclid", "gclid", "mc_cid", "mc_eid"}
+_TRACKING_PARAMS = {
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "ref",
+    "fbclid",
+    "gclid",
+    "mc_cid",
+    "mc_eid",
+}
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS scout_cache (
@@ -189,7 +199,9 @@ class Cache:
                (query_hash, query, provider, results, metadata, fetched_at, expires_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
-                h, query, provider,
+                h,
+                query,
+                provider,
                 json.dumps(results),
                 json.dumps(extra or {}),
                 now.isoformat(),
@@ -216,7 +228,9 @@ class Cache:
     async def stats(self) -> dict:
         """Return cache statistics."""
         counts: dict[str, int] = {}
-        async with self._db.execute("SELECT content_type, COUNT(*) as cnt FROM scout_cache GROUP BY content_type") as cursor:
+        async with self._db.execute(
+            "SELECT content_type, COUNT(*) as cnt FROM scout_cache GROUP BY content_type"
+        ) as cursor:
             async for row in cursor:
                 counts[row["content_type"]] = row["cnt"]
 
@@ -225,7 +239,9 @@ class Cache:
             counts["search"] = row["cnt"] if row else 0
 
         now = datetime.now(timezone.utc).isoformat()
-        async with self._db.execute("SELECT COUNT(*) as cnt FROM scout_cache WHERE expires_at <= ?", (now,)) as cursor:
+        async with self._db.execute(
+            "SELECT COUNT(*) as cnt FROM scout_cache WHERE expires_at <= ?", (now,)
+        ) as cursor:
             row = await cursor.fetchone()
             expired = row["cnt"] if row else 0
 

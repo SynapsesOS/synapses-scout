@@ -10,7 +10,9 @@ import sys
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="scout", description="Synapses-Scout: Web intelligence layer")
+    parser = argparse.ArgumentParser(
+        prog="scout", description="Synapses-Scout: Web intelligence layer"
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     sub = parser.add_subparsers(dest="command")
 
@@ -26,7 +28,9 @@ def main() -> None:
     fetch_p.add_argument("--no-distill", action="store_true", help="Skip distillation")
     fetch_p.add_argument("--region", default=None, help="Search region (e.g., us-en, fr-fr)")
     fetch_p.add_argument("--time", dest="timelimit", default=None, help="Time filter: d/w/m/y")
-    fetch_p.add_argument("--json", action="store_true", dest="output_json", help="Output JSON instead of Markdown")
+    fetch_p.add_argument(
+        "--json", action="store_true", dest="output_json", help="Output JSON instead of Markdown"
+    )
 
     # deep-search
     ds_p = sub.add_parser("deep-search", help="Orchestrated multi-query search")
@@ -129,17 +133,25 @@ async def _cmd_deep_search(args: argparse.Namespace) -> None:
         )
 
         if args.output_json:
-            print(json.dumps({
-                "query": orch.original_query,
-                "expanded_queries": orch.expanded_queries,
-                "hits": [h.model_dump() for h in orch.hits],
-                "total_raw_hits": orch.total_raw_hits,
-                "deduplicated": orch.deduplicated_count,
-            }, indent=2, default=str))
+            print(
+                json.dumps(
+                    {
+                        "query": orch.original_query,
+                        "expanded_queries": orch.expanded_queries,
+                        "hits": [h.model_dump() for h in orch.hits],
+                        "total_raw_hits": orch.total_raw_hits,
+                        "deduplicated": orch.deduplicated_count,
+                    },
+                    indent=2,
+                    default=str,
+                )
+            )
         else:
             print(f"# Deep Search: {orch.original_query}")
             print(f"Queries: {', '.join(orch.expanded_queries)}")
-            print(f"Raw hits: {orch.total_raw_hits} | Deduped: {orch.deduplicated_count} | Final: {len(orch.hits)}")
+            print(
+                f"Raw hits: {orch.total_raw_hits} | Deduped: {orch.deduplicated_count} | Final: {len(orch.hits)}"
+            )
             print()
             for i, hit in enumerate(orch.hits, 1):
                 print(f"## {i}. [{hit.title}]({hit.url})")
@@ -222,7 +234,9 @@ async def _cmd_status() -> None:
     print(f"  Cache entries:  {stats['total_entries']}")
     print(f"  Cache by type:  {stats['by_type']}")
     print(f"  Expired:        {stats['expired']}")
-    print(f"  Intelligence:   {'available' if intel_available else 'unavailable'} ({config.intelligence_url})")
+    print(
+        f"  Intelligence:   {'available' if intel_available else 'unavailable'} ({config.intelligence_url})"
+    )
     print(f"  Search:         {config.search_provider}")
     print(f"  Region:         {config.search_region}")
     print(f"  Query expand:   {'enabled' if config.search_expand else 'disabled'}")

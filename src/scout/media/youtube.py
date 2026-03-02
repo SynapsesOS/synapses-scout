@@ -24,7 +24,7 @@ def _extract_sync(url: str) -> MediaContent:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
-        "writesubtitles": False,   # we fetch subtitle URLs manually below
+        "writesubtitles": False,  # we fetch subtitle URLs manually below
         "writeautomaticsub": False,
         "subtitleslangs": ["en"],
         "subtitlesformat": "vtt",

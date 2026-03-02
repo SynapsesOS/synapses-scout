@@ -92,8 +92,12 @@ class Scout:
 
         if content_type == ContentType.SEARCH:
             return await self._handle_search(
-                input_str, force_refresh, should_distill,
-                region=region, timelimit=timelimit, max_results=max_results,
+                input_str,
+                force_refresh,
+                should_distill,
+                region=region,
+                timelimit=timelimit,
+                max_results=max_results,
             )
 
         url = ensure_url(input_str)
@@ -126,7 +130,8 @@ class Scout:
     ) -> list[SearchHit]:
         """Direct search, bypassing routing."""
         return await self.searcher.search(
-            query, max_results,
+            query,
+            max_results,
             region=region or self.config.search_region,
             timelimit=timelimit,
             safesearch=self.config.search_safesearch,
@@ -142,7 +147,8 @@ class Scout:
     ) -> list[NewsHit]:
         """Search news articles."""
         return await self.searcher.news(
-            query, max_results,
+            query,
+            max_results,
             region=region or self.config.search_region,
             timelimit=timelimit,
             safesearch=self.config.search_safesearch,
@@ -159,7 +165,8 @@ class Scout:
     ) -> list[ImageHit]:
         """Search images with optional size/layout filters."""
         return await self.searcher.images(
-            query, max_results,
+            query,
+            max_results,
             region=region or self.config.search_region,
             safesearch=self.config.search_safesearch,
             size=size,
@@ -286,9 +293,7 @@ class Scout:
         )
 
         if should_distill and hits:
-            result.fragment = await self._distill(
-                content_md, result.title, result.url, "search"
-            )
+            result.fragment = await self._distill(content_md, result.title, result.url, "search")
 
         return result
 
@@ -305,9 +310,7 @@ class Scout:
         )
 
         if should_distill:
-            result.fragment = await self._distill(
-                web.content_md, web.title, url, "web_page"
-            )
+            result.fragment = await self._distill(web.content_md, web.title, url, "web_page")
 
         return result
 
@@ -344,9 +347,7 @@ class Scout:
 
         if should_distill:
             distill_content = media.transcript or media.description or media.title
-            result.fragment = await self._distill(
-                distill_content, media.title, url, "youtube"
-            )
+            result.fragment = await self._distill(distill_content, media.title, url, "youtube")
 
         return result
 

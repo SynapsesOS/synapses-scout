@@ -155,8 +155,11 @@ async def orchestrated_search(
     # Fan-out: search all queries in parallel
     tasks = [
         searcher.search(
-            q, per_query_max,
-            region=region, timelimit=timelimit, safesearch=safesearch,
+            q,
+            per_query_max,
+            region=region,
+            timelimit=timelimit,
+            safesearch=safesearch,
         )
         for q in queries
     ]

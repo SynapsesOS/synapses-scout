@@ -39,12 +39,14 @@ async def health(request: Request) -> JSONResponse:
         scout = await _get_scout()
         intel_available = await scout.intelligence.available()
         cache_stats = await scout.cache.stats()
-        return JSONResponse({
-            "status": "ok",
-            "version": "0.0.1",
-            "intelligence_available": intel_available,
-            "cache": cache_stats,
-        })
+        return JSONResponse(
+            {
+                "status": "ok",
+                "version": "0.0.1",
+                "intelligence_available": intel_available,
+                "cache": cache_stats,
+            }
+        )
     except Exception as e:
         log.exception("health check error")
         return _err(str(e))
@@ -94,11 +96,13 @@ async def search(request: Request) -> JSONResponse:
             region=body.get("region"),
             timelimit=body.get("timelimit"),
         )
-        return JSONResponse({
-            "query": query,
-            "hits": [json.loads(h.model_dump_json()) for h in hits],
-            "count": len(hits),
-        })
+        return JSONResponse(
+            {
+                "query": query,
+                "hits": [json.loads(h.model_dump_json()) for h in hits],
+                "count": len(hits),
+            }
+        )
     except Exception as e:
         log.exception("search error for query=%r", query)
         return _err(str(e))
@@ -124,14 +128,16 @@ async def deep_search(request: Request) -> JSONResponse:
             timelimit=body.get("timelimit"),
             expand=body.get("expand"),
         )
-        return JSONResponse({
-            "query": orch.original_query,
-            "expanded_queries": orch.expanded_queries,
-            "hits": [json.loads(h.model_dump_json()) for h in orch.hits],
-            "count": len(orch.hits),
-            "total_raw_hits": orch.total_raw_hits,
-            "deduplicated": orch.deduplicated_count,
-        })
+        return JSONResponse(
+            {
+                "query": orch.original_query,
+                "expanded_queries": orch.expanded_queries,
+                "hits": [json.loads(h.model_dump_json()) for h in orch.hits],
+                "count": len(orch.hits),
+                "total_raw_hits": orch.total_raw_hits,
+                "deduplicated": orch.deduplicated_count,
+            }
+        )
     except Exception as e:
         log.exception("deep_search error for query=%r", query)
         return _err(str(e))
@@ -156,11 +162,13 @@ async def news(request: Request) -> JSONResponse:
             region=body.get("region"),
             timelimit=body.get("timelimit"),
         )
-        return JSONResponse({
-            "query": query,
-            "hits": [json.loads(h.model_dump_json()) for h in hits],
-            "count": len(hits),
-        })
+        return JSONResponse(
+            {
+                "query": query,
+                "hits": [json.loads(h.model_dump_json()) for h in hits],
+                "count": len(hits),
+            }
+        )
     except Exception as e:
         log.exception("news error for query=%r", query)
         return _err(str(e))
@@ -186,11 +194,13 @@ async def images_search(request: Request) -> JSONResponse:
             size=body.get("size"),
             layout=body.get("layout"),
         )
-        return JSONResponse({
-            "query": query,
-            "hits": [json.loads(h.model_dump_json()) for h in hits],
-            "count": len(hits),
-        })
+        return JSONResponse(
+            {
+                "query": query,
+                "hits": [json.loads(h.model_dump_json()) for h in hits],
+                "count": len(hits),
+            }
+        )
     except Exception as e:
         log.exception("images error for query=%r", query)
         return _err(str(e))

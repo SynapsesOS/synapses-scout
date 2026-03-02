@@ -40,8 +40,9 @@ class TestAvailability:
 
     @pytest.mark.asyncio
     async def test_available_false_on_connection_error(self, client):
-        with patch.object(client._client, "get", new_callable=AsyncMock,
-                          side_effect=httpx.ConnectError("refused")):
+        with patch.object(
+            client._client, "get", new_callable=AsyncMock, side_effect=httpx.ConnectError("refused")
+        ):
             result = await client.available()
 
         assert result is False
@@ -52,8 +53,9 @@ class TestAvailability:
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"available": True}
 
-        with patch.object(client._client, "get", new_callable=AsyncMock,
-                          return_value=mock_resp) as mock_get:
+        with patch.object(
+            client._client, "get", new_callable=AsyncMock, return_value=mock_resp
+        ) as mock_get:
             await client.available()
             await client.available()  # second call — should use cache
             assert mock_get.call_count == 1
@@ -64,8 +66,9 @@ class TestAvailability:
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"available": True}
 
-        with patch.object(client._client, "get", new_callable=AsyncMock,
-                          return_value=mock_resp) as mock_get:
+        with patch.object(
+            client._client, "get", new_callable=AsyncMock, return_value=mock_resp
+        ) as mock_get:
             await client.available()
             # Expire the cache
             client._available_checked_at = time.monotonic() - _AVAILABILITY_TTL - 1
@@ -88,8 +91,12 @@ class TestDistill:
         }
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock, return_value=ingest_resp):
-                result = await client.distill("content here", "My Title", "https://example.com", "web_page")
+            with patch.object(
+                client._client, "post", new_callable=AsyncMock, return_value=ingest_resp
+            ):
+                result = await client.distill(
+                    "content here", "My Title", "https://example.com", "web_page"
+                )
 
         assert isinstance(result, ScoutFragment)
         assert result.summary == "A great article about Python."
@@ -119,8 +126,9 @@ class TestDistill:
         long_content = "x" * 10_000
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock,
-                              return_value=ingest_resp) as mock_post:
+            with patch.object(
+                client._client, "post", new_callable=AsyncMock, return_value=ingest_resp
+            ) as mock_post:
                 await client.distill(long_content, "Title", "https://x.com", "web_page")
 
         payload = mock_post.call_args.kwargs["json"]
@@ -137,8 +145,9 @@ class TestDistill:
         ingest_resp.json.return_value = {"summary": "ok", "tags": []}
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock,
-                              return_value=ingest_resp) as mock_post:
+            with patch.object(
+                client._client, "post", new_callable=AsyncMock, return_value=ingest_resp
+            ) as mock_post:
                 await client.distill("content", "Title", "https://example.com", "web_page")
 
         payload = mock_post.call_args.kwargs["json"]
@@ -157,9 +166,12 @@ class TestDistill:
         ingest_resp.json.return_value = {"summary": "ok", "tags": []}
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock,
-                              return_value=ingest_resp) as mock_post:
-                await client.distill("transcript", "Video", "https://youtube.com/watch?v=x", "youtube")
+            with patch.object(
+                client._client, "post", new_callable=AsyncMock, return_value=ingest_resp
+            ) as mock_post:
+                await client.distill(
+                    "transcript", "Video", "https://youtube.com/watch?v=x", "youtube"
+                )
 
         payload = mock_post.call_args.kwargs["json"]
         assert payload["node_type"] == "youtube video"
@@ -171,8 +183,12 @@ class TestDistill:
         health_resp.json.return_value = {"available": True}
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock,
-                              side_effect=httpx.TimeoutException("timeout")):
+            with patch.object(
+                client._client,
+                "post",
+                new_callable=AsyncMock,
+                side_effect=httpx.TimeoutException("timeout"),
+            ):
                 result = await client.distill("content", "title", "https://x.com", "web_page")
 
         assert result is None
@@ -192,8 +208,9 @@ class TestDistill:
         long_title = "A" * 200
 
         with patch.object(client._client, "get", new_callable=AsyncMock, return_value=health_resp):
-            with patch.object(client._client, "post", new_callable=AsyncMock,
-                              return_value=ingest_resp) as mock_post:
+            with patch.object(
+                client._client, "post", new_callable=AsyncMock, return_value=ingest_resp
+            ) as mock_post:
                 await client.distill("content", long_title, "https://x.com", "web_page")
 
         payload = mock_post.call_args.kwargs["json"]

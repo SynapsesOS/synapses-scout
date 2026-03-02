@@ -43,11 +43,15 @@ class TestScoutConfigDefaults:
 class TestLoadConfigFromFile:
     def test_loads_values_from_json_file(self, tmp_path):
         config_file = tmp_path / "scout.json"
-        config_file.write_text(json.dumps({
-            "port": 9999,
-            "search_provider": "tavily",
-            "distill": False,
-        }))
+        config_file.write_text(
+            json.dumps(
+                {
+                    "port": 9999,
+                    "search_provider": "tavily",
+                    "distill": False,
+                }
+            )
+        )
 
         config = load_config(str(config_file))
 

@@ -115,11 +115,7 @@ class TestGetTranscript:
 
     def test_uses_in_memory_data_if_available(self):
         vtt_content = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello world\n"
-        info = {
-            "requested_subtitles": {
-                "en": {"data": vtt_content, "ext": "vtt"}
-            }
-        }
+        info = {"requested_subtitles": {"en": {"data": vtt_content, "ext": "vtt"}}}
         result = _get_transcript(info)
         assert result is not None
         assert "Hello world" in result
@@ -143,9 +139,7 @@ class TestGetTranscript:
         info = {
             "requested_subtitles": {},
             "subtitles": {},
-            "automatic_captions": {
-                "en": [{"ext": "vtt", "url": "https://example.com/auto.vtt"}]
-            },
+            "automatic_captions": {"en": [{"ext": "vtt", "url": "https://example.com/auto.vtt"}]},
         }
 
         with patch("scout.media.youtube._fetch_subtitle_url", return_value=vtt_content):

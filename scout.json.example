@@ -1,0 +1,17 @@
+{
+    "port": 11436,
+    "db_path": "~/.synapses/scout.db",
+    "intelligence_url": "http://localhost:11435",
+    "intelligence_timeout_ms": 5000,
+    "search_provider": "duckduckgo",
+    "tavily_api_key": null,
+    "distill": true,
+    "max_content_chars": 50000,
+    "default_ttl_search_hours": 6,
+    "default_ttl_web_hours": 24,
+    "default_ttl_media_hours": 168,
+    "default_ttl_doc_hours": 720,
+    "search_region": "wt-wt",
+    "search_safesearch": "moderate",
+    "search_expand": true
+}

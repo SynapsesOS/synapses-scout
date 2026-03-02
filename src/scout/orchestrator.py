@@ -147,8 +147,10 @@ async def orchestrated_search(
         safesearch: SafeSearch level.
     """
     queries = expand_query(query) if expand else [query]
-    # Fetch more per-query to have good dedup material
-    per_query_max = max(max_results, 5)
+    # Fetch at least 2x max_results per query so deduplication has meaningful
+    # overlap material — otherwise small max_results (e.g. 5) leaves only ~10
+    # unique hits across 4 queries, weakening the ranking signal.
+    per_query_max = max(max_results * 2, 10)
 
     # Fan-out: search all queries in parallel
     tasks = [

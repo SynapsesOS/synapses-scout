@@ -33,9 +33,15 @@ class ScoutConfig(BaseModel):
         return Path(self.db_path).expanduser()
 
 
-def load_config() -> ScoutConfig:
-    """Load config: defaults -> file -> env overrides."""
-    config_path = os.environ.get("SCOUT_CONFIG", str(Path.home() / ".synapses" / "scout.json"))
+def load_config(config_path: str | None = None) -> ScoutConfig:
+    """Load config: defaults -> file -> env overrides.
+
+    Args:
+        config_path: Explicit path to scout.json. If None, reads SCOUT_CONFIG
+                     env var, falling back to ~/.synapses/scout.json.
+    """
+    if config_path is None:
+        config_path = os.environ.get("SCOUT_CONFIG", str(Path.home() / ".synapses" / "scout.json"))
     data: dict = {}
 
     path = Path(config_path)

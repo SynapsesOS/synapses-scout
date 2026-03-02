@@ -30,8 +30,11 @@ def _extract_sync(url: str) -> MediaContent:
         "subtitlesformat": "vtt",
     }
 
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except yt_dlp.utils.DownloadError as e:
+        raise ValueError(str(e)) from e
 
     if info is None:
         return MediaContent(url=url, title="", extracted_at=datetime.now(timezone.utc))

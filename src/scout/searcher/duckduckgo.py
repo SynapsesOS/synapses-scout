@@ -9,6 +9,7 @@ import asyncio
 from functools import partial
 
 from ddgs import DDGS
+from ddgs.exceptions import DDGSException
 
 from scout.models import ImageHit, NewsHit, SearchHit
 
@@ -130,23 +131,21 @@ class DuckDuckGoSearcher:
         timelimit: str | None,
         safesearch: str,
     ) -> list[SearchHit]:
-        hits: list[SearchHit] = []
-        with self._make_client() as ddgs:
-            for r in ddgs.text(
-                query,
-                max_results=max_results,
-                region=region,
-                timelimit=timelimit,
-                safesearch=safesearch,
-            ):
-                hits.append(
-                    SearchHit(
-                        title=r.get("title", ""),
-                        url=r.get("href", ""),
-                        snippet=r.get("body", ""),
-                    )
+        try:
+            with self._make_client() as ddgs:
+                results = ddgs.text(
+                    query,
+                    max_results=max_results,
+                    region=region,
+                    timelimit=timelimit,
+                    safesearch=safesearch,
                 )
-        return hits
+        except DDGSException:
+            return []
+        return [
+            SearchHit(title=r.get("title", ""), url=r.get("href", ""), snippet=r.get("body", ""))
+            for r in results
+        ]
 
     def _news_sync(
         self,
@@ -157,25 +156,27 @@ class DuckDuckGoSearcher:
         timelimit: str | None,
         safesearch: str,
     ) -> list[NewsHit]:
-        hits: list[NewsHit] = []
-        with self._make_client() as ddgs:
-            for r in ddgs.news(
-                query,
-                max_results=max_results,
-                region=region,
-                timelimit=timelimit,
-                safesearch=safesearch,
-            ):
-                hits.append(
-                    NewsHit(
-                        title=r.get("title", ""),
-                        url=r.get("url", ""),
-                        snippet=r.get("body", ""),
-                        source=r.get("source", ""),
-                        date=r.get("date", ""),
-                    )
+        try:
+            with self._make_client() as ddgs:
+                results = ddgs.news(
+                    query,
+                    max_results=max_results,
+                    region=region,
+                    timelimit=timelimit,
+                    safesearch=safesearch,
                 )
-        return hits
+        except DDGSException:
+            return []
+        return [
+            NewsHit(
+                title=r.get("title", ""),
+                url=r.get("url", ""),
+                snippet=r.get("body", ""),
+                source=r.get("source", ""),
+                date=r.get("date", ""),
+            )
+            for r in results
+        ]
 
     def _images_sync(
         self,
@@ -190,28 +191,30 @@ class DuckDuckGoSearcher:
         type_image: str | None,
         layout: str | None,
     ) -> list[ImageHit]:
-        hits: list[ImageHit] = []
-        with self._make_client() as ddgs:
-            for r in ddgs.images(
-                query,
-                max_results=max_results,
-                region=region,
-                timelimit=timelimit,
-                safesearch=safesearch,
-                size=size,
-                color=color,
-                type_image=type_image,
-                layout=layout,
-            ):
-                hits.append(
-                    ImageHit(
-                        title=r.get("title", ""),
-                        url=r.get("url", ""),
-                        image_url=r.get("image", ""),
-                        thumbnail_url=r.get("thumbnail", ""),
-                        width=r.get("width", 0) or 0,
-                        height=r.get("height", 0) or 0,
-                        source=r.get("source", ""),
-                    )
+        try:
+            with self._make_client() as ddgs:
+                results = ddgs.images(
+                    query,
+                    max_results=max_results,
+                    region=region,
+                    timelimit=timelimit,
+                    safesearch=safesearch,
+                    size=size,
+                    color=color,
+                    type_image=type_image,
+                    layout=layout,
                 )
-        return hits
+        except DDGSException:
+            return []
+        return [
+            ImageHit(
+                title=r.get("title", ""),
+                url=r.get("url", ""),
+                image_url=r.get("image", ""),
+                thumbnail_url=r.get("thumbnail", ""),
+                width=r.get("width", 0) or 0,
+                height=r.get("height", 0) or 0,
+                source=r.get("source", ""),
+            )
+            for r in results
+        ]

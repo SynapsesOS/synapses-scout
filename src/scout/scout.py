@@ -315,7 +315,10 @@ class Scout:
         return result
 
     async def _handle_youtube(self, url: str, should_distill: bool) -> ScoutResult:
-        media = await extract_youtube(url)
+        try:
+            media = await extract_youtube(url)
+        except ValueError as e:
+            raise ValueError(f"YouTube extraction failed: {e}") from e
 
         content_parts = []
         if media.description:

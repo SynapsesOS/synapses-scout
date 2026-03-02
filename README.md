@@ -91,12 +91,12 @@ scout serve --port 8080        # custom port
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/v1/health` | Status, intelligence availability, cache stats |
-| `POST` | `/v1/fetch` | Unified fetch: `{"input": "url or query"}` |
+| `POST` | `/v1/fetch` | Unified fetch: `{"input": "url or query", "max_results": 10, "force_refresh": false}` |
 | `POST` | `/v1/search` | Web search: `{"query": "...", "max_results": 5}` |
 | `POST` | `/v1/deep-search` | Orchestrated multi-query: `{"query": "...", "max_results": 10}` |
 | `POST` | `/v1/news` | News search: `{"query": "...", "timelimit": "d"}` |
 | `POST` | `/v1/images` | Image search: `{"query": "...", "size": "Large"}` |
-| `POST` | `/v1/extract` | Direct URL extraction: `{"url": "..."}` |
+| `POST` | `/v1/extract` | Direct URL extraction: `{"url": "...", "force_refresh": false}` |
 | `GET/DELETE` | `/v1/cache` | Cache stats / prune |
 
 All endpoints accept optional `region` (e.g., `"us-en"`, `"fr-fr"`) and `timelimit` (`"d"`, `"w"`, `"m"`, `"y"`) parameters.
@@ -156,6 +156,25 @@ Config file: `~/.synapses/scout.json` (optional — all fields have defaults)
 
 Environment variable overrides: `SCOUT_CONFIG`, `SCOUT_PORT`, `SCOUT_INTELLIGENCE_URL`, `TAVILY_API_KEY`.
 
+### Using Tavily
+
+Tavily provides richer, context-enriched search results compared to DuckDuckGo. To enable it:
+
+**Option 1 — environment variable (recommended):**
+```bash
+export TAVILY_API_KEY="tvly-your-key-here"
+```
+
+**Option 2 — config file:**
+```json
+{
+    "search_provider": "tavily",
+    "tavily_api_key": "tvly-your-key-here"
+}
+```
+
+Get a free API key at [tavily.com](https://tavily.com). Without a key, Scout falls back to DuckDuckGo automatically.
+
 ---
 
 ## Caching Strategy
@@ -179,13 +198,21 @@ Scout integrates with [synapses-intelligence](https://github.com/SynapsesOS/syna
 ```
 POST http://localhost:11435/v1/ingest
 {
-    "node_id": "scout:web:a1b2c3d4e5f6",
+    "node_id": "scout:web_page:a1b2c3d4e5f6",
     "node_name": "Article Title",
-    "node_type": "web_content",
+    "node_type": "web article",
     "package": "example.com",
-    "code": "first 500 chars of content..."
+    "code": "first 3000 chars of content..."
 }
 ```
+
+Node types mapped per content:
+
+| Scout content type | `node_type` sent to intelligence |
+|---|---|
+| Web page | `"web article"` |
+| YouTube video | `"youtube video"` |
+| Search results | `"search result set"` |
 
 If intelligence is unavailable, Scout skips distillation and returns raw content. Fail-silent — same contract as the rest of the ecosystem.
 
@@ -198,7 +225,7 @@ If intelligence is unavailable, Scout skips distillation and returns raw content
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Test
+# Test (116 tests)
 make test
 
 # Lint

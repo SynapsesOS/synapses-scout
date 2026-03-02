@@ -10,7 +10,6 @@
     "default_ttl_search_hours": 6,
     "default_ttl_web_hours": 24,
     "default_ttl_media_hours": 168,
-    "default_ttl_doc_hours": 720,
     "search_region": "wt-wt",
     "search_safesearch": "moderate",
     "search_expand": true

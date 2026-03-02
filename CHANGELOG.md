@@ -5,6 +5,75 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.2] — 2026-03-03
+
+### Fixed
+
+- **Tavily provider properly wired**: `_make_searcher()` now actually instantiates
+  `TavilySearcher` when `search_provider = "tavily"` and the API key is present.
+  Previously, the Tavily code path was dead (`pass`) and DuckDuckGo was always used.
+
+- **YouTube transcript extraction**: yt-dlp populates `data` only when writing to
+  disk. With `download=False`, the `data` field is always `None`. Scout now fetches
+  subtitle URLs directly via `urllib.request`, fixing transcript extraction for all
+  YouTube videos with auto-generated captions.
+
+- **VTT deduplication**: The VTT cleaner used a global `seen` set, which dropped
+  legitimately repeated phrases (e.g., "Thank you" appearing at two different
+  timestamps). Changed to previous-line comparison — only adjacent duplicates are
+  removed, matching the YouTube subtitle overlap pattern.
+
+- **Distillation content size**: Increased from 500 → 3000 chars. At 500 chars,
+  the LLM barely had enough context to produce a meaningful summary.
+
+- **Distillation node types**: Corrected to human-readable strings matching
+  intelligence's expectations: `"web article"`, `"youtube video"`,
+  `"search result set"` (was `"web_content"`, `"youtube_transcript"`, etc.).
+
+- **`extract()` now caches results**: Direct URL extraction via `Scout.extract()`
+  previously bypassed the SQLite cache entirely. It now reads/writes cache with
+  TTL, and accepts a `force_refresh` parameter.
+
+- **Intelligence availability TTL cache**: The `IntelligenceClient` now caches the
+  availability check result for 30 seconds (`time.monotonic()`). Previously, every
+  `distill()` call made a GET `/v1/health` immediately before the POST `/v1/ingest`,
+  causing N+1 HTTP requests. On ingest failure, the cache is invalidated so the
+  next call re-checks.
+
+- **`max_results` parameter in `fetch()`**: `Scout.fetch()` and the `POST /v1/fetch`
+  endpoint now accept `max_results` (default: 10), threaded through to
+  `_handle_search()`.
+
+- **Server error handling**: All HTTP endpoints now wrap handler logic in
+  `try/except` and return `{"error": "..."}` JSON with appropriate HTTP status
+  codes instead of 500 stack traces. JSON body parse errors return 400.
+
+- **Singleton race condition**: Two concurrent coroutines could both observe
+  `_scout is None` and call `Scout.create()` simultaneously. Fixed with
+  `asyncio.Lock()` + double-checked locking in `_get_scout()`.
+
+- **`per_query_max` multiplier**: Orchestrator now uses `max(max_results * 2, 10)`
+  per-query fetch budget (was `max(max_results, 5)`), giving the deduplicator more
+  raw material and improving final result quality for small `max_results` values.
+
+- **`load_config()` accepts optional path**: `load_config(config_path=None)` now
+  accepts an explicit path parameter, making it easily testable without environment
+  variable manipulation.
+
+### Added
+
+- **61 new tests** (116 total, up from 55):
+  - `test_distiller.py` — 14 tests covering availability TTL caching, distillation
+    content truncation, node type mapping, and error recovery.
+  - `test_server.py` — 25 tests covering all HTTP endpoints, error responses,
+    JSON body validation, and singleton initialization.
+  - `test_youtube.py` — 15 tests covering VTT cleaning (timestamps, HTML tags,
+    deduplication, cue indices) and transcript extraction fallback chain.
+  - `test_config.py` — 12 tests covering defaults, JSON file loading, partial
+    file merging, and environment variable overrides.
+
+---
+
 ## [0.0.1] — 2026-03-02
 
 ### Added

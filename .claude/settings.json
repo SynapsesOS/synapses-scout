@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "echo '[Synapses] This project is indexed — prefer get_context(entity, file=), find_entity, or search(mode=semantic) over file scanning for code exploration. Use Read/Grep only when writing to a specific file you have already identified.'",
+            "type": "command"
+          }
+        ],
+        "matcher": "Glob|Grep"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "echo '[Synapses] This project is indexed by Synapses code intelligence. Call session_init() ONCE at session start — it returns pending tasks, project identity, working state, recent events, and scale_guidance in one round-trip. For code exploration use: get_context(entity, file=), find_entity, search, get_call_chain, get_impact, get_file_context. Use validate_plan() before implementing multi-file changes. Use claim_work() before editing, release_claims() when done.'",
+            "type": "command"
+          }
+        ],
+        "matcher": "startup"
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "mcp__synapses__*"
+    ]
+  }
+}

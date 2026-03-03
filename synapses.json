@@ -1,0 +1,6 @@
+{
+  "scout": {
+    "url": "http://localhost:11436",
+    "timeout_sec": 30
+  }
+}

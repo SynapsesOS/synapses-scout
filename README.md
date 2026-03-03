@@ -24,7 +24,7 @@ The agent gets clean context. Not raw HTML.
 - **Orchestrated Search** — Expands queries into multiple angles, fans out in parallel, deduplicates by URL, scores by cross-query frequency + relevance.
 - **News & Image Search** — Full DuckDuckGo feature set: regions, time filters, SafeSearch, image size/color/layout.
 - **YouTube Intelligence** — yt-dlp metadata + auto-generated transcript extraction. No downloads, no Whisper needed.
-- **Intelligence Distillation** — Sends content to [synapses-intelligence](https://github.com/SynapsesOS/synapses-intelligence) for LLM summarization. Fail-silent: works without it.
+- **Intelligence Distillation** — 2-step pipeline: `POST /v1/prune` (0.8B strips boilerplate) → `POST /v1/ingest` (4B summarizes clean content). Fail-silent: works without intelligence.
 - **SQLite Cache** — TTL-based caching (search: 6h, web: 24h, YouTube: 7d). URL normalization strips tracking params.
 - **HTTP API** — REST server on `localhost:11436`. Same pattern as the intelligence sidecar.
 - **Local-First** — Everything runs on your machine. No cloud APIs required for core features.
@@ -73,7 +73,11 @@ Intelligence (:11435)    Scout (:11436)
                              Intelligence (:11435) for distillation
 ```
 
-Scout talks to intelligence via its existing `POST /v1/ingest` endpoint for LLM summaries — no duplicate Ollama setup.
+Scout uses a **2-step distillation pipeline** with intelligence:
+1. `POST /v1/prune` (0.8B Reflex) — strips navigation, ads, footers from raw web content → ~1200 chars clean signal
+2. `POST /v1/ingest` (4B Specialist) — summarizes the clean technical content → prose briefing
+
+Both steps are fail-silent. No duplicate Ollama setup — scout reuses the brain sidecar.
 
 ---
 

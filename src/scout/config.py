@@ -13,7 +13,7 @@ class ScoutConfig(BaseModel):
     port: int = 11436
     db_path: str = "~/.synapses/scout.db"
     intelligence_url: str = "http://localhost:11435"
-    intelligence_timeout_ms: int = 5000
+    intelligence_timeout_ms: int = 60000
     search_provider: str = "duckduckgo"  # "duckduckgo" | "tavily"
     tavily_api_key: str | None = None
     distill: bool = True

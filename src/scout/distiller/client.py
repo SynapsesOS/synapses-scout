@@ -36,7 +36,7 @@ _AVAILABILITY_TTL = 30.0
 class IntelligenceClient:
     """Fail-silent HTTP client to synapses-intelligence at localhost:11435."""
 
-    def __init__(self, base_url: str, timeout_ms: int = 5000):
+    def __init__(self, base_url: str, timeout_ms: int = 60000):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout_ms / 1000
         self._client = httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout)
@@ -51,7 +51,7 @@ class IntelligenceClient:
             return self._available
 
         try:
-            resp = await self._client.get("/v1/health")
+            resp = await self._client.get("/v1/health", timeout=5.0)
             if resp.status_code == 200:
                 data = resp.json()
                 self._available = bool(data.get("available", False))

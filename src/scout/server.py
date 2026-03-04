@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from scout.models import SearchHit
 from scout.scout import Scout
 
 log = logging.getLogger(__name__)
@@ -90,12 +91,34 @@ async def search(request: Request) -> JSONResponse:
 
     try:
         scout = await _get_scout()
+
+        # Check cache first (BUG-SC03 fix: /v1/search was bypassing cache).
+        cached = await scout.cache.get_search(query)
+        if cached:
+            hits = [SearchHit(**h) for h in cached["results"]]
+            return JSONResponse(
+                {
+                    "query": query,
+                    "hits": [json.loads(h.model_dump_json()) for h in hits],
+                    "count": len(hits),
+                    "cached": True,
+                }
+            )
+
         hits = await scout.search(
             query,
             max_results=body.get("max_results", 5),
             region=body.get("region"),
             timelimit=body.get("timelimit"),
         )
+        # Cache for subsequent calls.
+        if hits:
+            await scout.cache.put_search(
+                query,
+                scout.config.search_provider,
+                [h.model_dump() for h in hits],
+                scout.config.default_ttl_search_hours,
+            )
         return JSONResponse(
             {
                 "query": query,
@@ -121,6 +144,23 @@ async def deep_search(request: Request) -> JSONResponse:
 
     try:
         scout = await _get_scout()
+
+        # Check cache first (deep_search results are expensive — cache aggressively).
+        cached = await scout.cache.get_search(query)
+        if cached:
+            hits = [SearchHit(**h) for h in cached["results"]]
+            return JSONResponse(
+                {
+                    "query": query,
+                    "expanded_queries": cached.get("queries_used", [query]),
+                    "hits": [json.loads(h.model_dump_json()) for h in hits],
+                    "count": len(hits),
+                    "total_raw_hits": cached.get("total_raw_hits", len(hits)),
+                    "deduplicated": cached.get("deduplicated", 0),
+                    "cached": True,
+                }
+            )
+
         orch = await scout.deep_search(
             query,
             max_results=body.get("max_results", 10),
@@ -128,6 +168,19 @@ async def deep_search(request: Request) -> JSONResponse:
             timelimit=body.get("timelimit"),
             expand=body.get("expand"),
         )
+        # Cache orchestrated results.
+        if orch.hits:
+            await scout.cache.put_search(
+                query,
+                scout.config.search_provider,
+                [h.model_dump() for h in orch.hits],
+                scout.config.default_ttl_search_hours,
+                extra={
+                    "queries_used": orch.expanded_queries,
+                    "total_raw_hits": orch.total_raw_hits,
+                    "deduplicated": orch.deduplicated_count,
+                },
+            )
         return JSONResponse(
             {
                 "query": orch.original_query,

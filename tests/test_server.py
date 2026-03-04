@@ -32,6 +32,8 @@ def mock_scout():
     scout.cache.stats = AsyncMock(return_value={"total_entries": 0, "by_type": {}, "expired": 0})
     scout.cache.invalidate = AsyncMock(return_value=True)
     scout.cache.prune = AsyncMock(return_value=3)
+    scout.cache.get_search = AsyncMock(return_value=None)
+    scout.cache.put_search = AsyncMock(return_value=None)
     scout.fetch = AsyncMock(return_value=_make_result())
     scout.search = AsyncMock(return_value=[])
     scout.news = AsyncMock(return_value=[])

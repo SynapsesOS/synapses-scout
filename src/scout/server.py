@@ -82,7 +82,13 @@ async def fetch(request: Request) -> JSONResponse:
             timelimit=body.get("timelimit"),
             max_results=int(body.get("max_results", 10)),
         )
-        return JSONResponse(json.loads(result.model_dump_json()))
+        response_data = json.loads(result.model_dump_json())
+        # Add backward-compatible distillation fields alongside the fragment object.
+        # Older clients check distilled:bool and distilled_content:str directly.
+        response_data["distilled"] = result.fragment is not None
+        if result.fragment and result.fragment.summary:
+            response_data["distilled_content"] = result.fragment.summary
+        return JSONResponse(response_data)
     except Exception as e:
         log.exception("fetch error for input=%r", input_str)
         return _err(str(e))

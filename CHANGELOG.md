@@ -5,6 +5,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.5] — 2026-03-04
+
+### Fixed
+
+- **Backward-compat `distilled`/`distilled_content` fields removed from `/v1/fetch` response**: Older clients and the E2E test plan check for `distilled: bool` and `distilled_content: str` at the top level. These were removed when `fragment` object was introduced. Re-added as backward-compatible fields alongside `fragment`: `distilled` is `true` when `fragment` is not null; `distilled_content` is `fragment.summary` when present. (`src/scout/server.py`)
+
+---
+
+## [0.0.4] — 2026-03-03
+
+### Fixed
+
+- **BUG-SC02: Cache+distill race**: Once a URL was cached without distillation, subsequent `distill:true` requests returned the undistilled cached result because the cache lookup happened before the distill flag was checked. Fixed: `Scout.fetch()` now checks the `distill` flag before cache lookup — if distillation is requested but the cached entry has no `fragment`, the cache is bypassed.
+
+- **BUG-SC03: `/v1/search` and `/v1/deep-search` not caching results**: Search results were never persisted to `scout.db` despite `default_ttl_search_hours` being configured. Both endpoints now check the cache on read (early return on cache hit) and write results to cache after a successful search.
+
+- **Intelligence client default timeout**: Increased `intelligence_timeout_ms` default from 10s to 60s. On CPU-only machines, `/v1/ingest` takes 15-20s, so the 10s default caused every distillation call to fail silently.
+
+---
+
+## [0.0.3] — 2026-03-03
+
+### Fixed
+
+- **Distillation always failing on CPU-only machines**: `IntelligenceClient` used a 5-second connect timeout for all calls. On CPU-only machines, Ollama inference takes 15-20s, so every distillation call timed out. Increased default timeout to 60s; configurable via `intelligence_timeout_ms` in `~/.synapses/scout.json`.
+
+- **Prune step blocks distillation on timeout**: The prune step (`/v1/prune`) was not fail-silent — if it timed out, the distillation pipeline halted entirely. Now, if prune times out or fails, the raw content is passed directly to `/v1/ingest` (already the correct behavior, now consistently applied).
+
+---
+
 ## [0.0.2] — 2026-03-03
 
 ### Fixed

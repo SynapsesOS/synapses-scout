@@ -17,7 +17,15 @@ from scout.scout import Scout
 log = logging.getLogger(__name__)
 
 _scout: Scout | None = None
-_scout_lock = asyncio.Lock()
+_scout_lock: asyncio.Lock | None = None
+
+
+async def _get_scout_lock() -> asyncio.Lock:
+    """Return the shared lock, creating it once per event loop."""
+    global _scout_lock
+    if _scout_lock is None:
+        _scout_lock = asyncio.Lock()
+    return _scout_lock
 
 
 async def _get_scout() -> Scout:
@@ -25,7 +33,8 @@ async def _get_scout() -> Scout:
     global _scout
     if _scout is not None:
         return _scout
-    async with _scout_lock:
+    lock = await _get_scout_lock()
+    async with lock:
         if _scout is None:  # double-check after acquiring lock
             _scout = await Scout.create()
     return _scout

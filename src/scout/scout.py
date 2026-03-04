@@ -102,11 +102,13 @@ class Scout:
 
         url = ensure_url(input_str)
 
-        # Check cache
+        # Check cache. Skip cache hit if distillation is required but cached result
+        # has no fragment — distilled and undistilled variants get separate entries.
         if not force_refresh:
             cached = await self.cache.get(url)
             if cached is not None:
-                return cached
+                if not should_distill or cached.fragment is not None:
+                    return cached
 
         # Dispatch by type
         if content_type == ContentType.YOUTUBE:
@@ -200,13 +202,15 @@ class Scout:
     async def extract(self, url: str, *, force_refresh: bool = False) -> ScoutResult:
         """Direct web extraction with caching."""
         url = ensure_url(url)
+        should_distill = self.config.distill
 
         if not force_refresh:
             cached = await self.cache.get(url)
             if cached is not None:
-                return cached
+                if not should_distill or cached.fragment is not None:
+                    return cached
 
-        result = await self._handle_web(url, self.config.distill)
+        result = await self._handle_web(url, should_distill)
         await self.cache.put(result, self.config.default_ttl_web_hours)
         return result
 

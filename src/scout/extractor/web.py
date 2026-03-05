@@ -79,6 +79,7 @@ async def _fast_extract(url: str, config: ScoutConfig) -> WebContent | None:
         title=title,
         content_md=markdown,
         word_count=word_count,
+        source="trafilatura",
         extracted_at=datetime.now(timezone.utc),
     )
 
@@ -137,5 +138,6 @@ async def _browser_extract(url: str, config: ScoutConfig) -> WebContent:
         title=title,
         content_md=markdown,
         word_count=word_count,
+        source="browser",
         extracted_at=datetime.now(timezone.utc),
     )

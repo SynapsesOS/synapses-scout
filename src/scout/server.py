@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.metadata
 import json
 import logging
 
@@ -13,6 +14,8 @@ from starlette.routing import Route
 
 from scout.models import SearchHit
 from scout.scout import Scout
+
+_VERSION = importlib.metadata.version("synapses-scout")
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +55,7 @@ async def health(request: Request) -> JSONResponse:
         return JSONResponse(
             {
                 "status": "ok",
-                "version": "0.0.1",
+                "version": _VERSION,
                 "intelligence_available": intel_available,
                 "cache": cache_stats,
             }

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS scout_cache (
     content_type TEXT NOT NULL,
     title        TEXT NOT NULL DEFAULT '',
     content_md   TEXT NOT NULL,
+    source       TEXT NOT NULL DEFAULT '',
     metadata     TEXT NOT NULL DEFAULT '{}',
     summary      TEXT NOT NULL DEFAULT '',
     tags         TEXT NOT NULL DEFAULT '[]',
@@ -56,6 +57,8 @@ CREATE INDEX IF NOT EXISTS idx_search_expires ON search_cache(expires_at);
 _MIGRATIONS = [
     # Add metadata column to search_cache if it doesn't exist (added in v0.0.2).
     "ALTER TABLE search_cache ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'",
+    # Add source column to scout_cache missing in earlier versions.
+    "ALTER TABLE scout_cache ADD COLUMN source TEXT NOT NULL DEFAULT ''",
 ]
 
 
@@ -128,6 +131,7 @@ class Cache:
             title=row["title"],
             content_md=row["content_md"],
             word_count=len(row["content_md"].split()),
+            source=row["source"] if "source" in row.keys() else "",
             metadata=json.loads(row["metadata"]),
             fragment=fragment,
             cached=True,
@@ -145,14 +149,15 @@ class Cache:
 
         await self._db.execute(
             """INSERT OR REPLACE INTO scout_cache
-               (url_hash, url, content_type, title, content_md, metadata, summary, tags, fetched_at, expires_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (url_hash, url, content_type, title, content_md, source, metadata, summary, tags, fetched_at, expires_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 h,
                 result.url,
                 result.content_type.value,
                 result.title,
                 result.content_md,
+                result.source,
                 json.dumps(result.metadata),
                 summary,
                 tags,

@@ -310,6 +310,7 @@ class Scout:
             title=web.title,
             content_md=web.content_md,
             word_count=web.word_count,
+            source=web.source,
             fetched_at=web.extracted_at,
         )
 

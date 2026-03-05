@@ -51,6 +51,7 @@ class WebContent(BaseModel):
     title: str
     content_md: str
     word_count: int = 0
+    source: str = ""  # "trafilatura" or "browser"
     extracted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -83,6 +84,7 @@ class ScoutResult(BaseModel):
     title: str
     content_md: str
     word_count: int = 0
+    source: str = ""  # "trafilatura", "browser", "yt-dlp", "ddgs", etc.
     metadata: dict = Field(default_factory=dict)
     fragment: ScoutFragment | None = None
     cached: bool = False
